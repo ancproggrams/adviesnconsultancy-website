@@ -1,0 +1,1180 @@
+generator client {
+    provider = "prisma-client-js"
+    binaryTargets = ["native", "linux-musl-arm64-openssl-3.0.x"]
+    output = "/home/ubuntu/abcsite_replica/node_modules/.prisma/client"
+}
+
+datasource db {
+    provider = "postgresql"
+    url      = env("DATABASE_URL")
+}
+
+model Contact {
+  id        String   @id @default(cuid())
+  name      String
+  email     String
+  company   String?
+  phone     String?
+  message   String
+  formType  String   @default("general")
+  interest  String?
+  createdAt DateTime @default(now())
+
+  @@map("contacts")
+}
+
+model BlogPost {
+  id              String         @id @default(cuid())
+  title           String
+  slug            String         @unique
+  excerpt         String
+  content         String
+  featuredImage   String?
+  status          PostStatus     @default(DRAFT)
+  authorName      String         @default("Marc René")
+  authorEmail     String         @default("marc@adviesnconsultancy.nl")
+  publishedAt     DateTime?
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+  metaTitle       String?
+  metaDescription String?
+  keywords        String?
+  viewCount       Int            @default(0)
+  shareCount      Int            @default(0)
+  categories      BlogCategory[] @relation("BlogCategoryToBlogPost")
+  tags            BlogTag[]      @relation("BlogPostToBlogTag")
+
+  @@map("blog_posts")
+}
+
+model BlogCategory {
+  id          String     @id @default(cuid())
+  name        String     @unique
+  slug        String     @unique
+  description String?
+  color       String     @default("#60B5FF")
+  createdAt   DateTime   @default(now())
+  posts       BlogPost[] @relation("BlogCategoryToBlogPost")
+
+  @@map("blog_categories")
+}
+
+model BlogTag {
+  id        String     @id @default(cuid())
+  name      String     @unique
+  slug      String     @unique
+  createdAt DateTime   @default(now())
+  posts     BlogPost[] @relation("BlogPostToBlogTag")
+
+  @@map("blog_tags")
+}
+
+model DownloadResource {
+  id            String   @id @default(cuid())
+  title         String
+  description   String
+  category      String
+  type          String
+  fileUrl       String
+  fileName      String
+  fileSize      Int?
+  downloadCount Int      @default(0)
+  isActive      Boolean  @default(true)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@map("download_resources")
+}
+
+model CaseStudy {
+  id          String     @id @default(cuid())
+  title       String
+  slug        String     @unique
+  industry    String
+  challenge   String
+  solution    String
+  result      String
+  duration    String
+  imageUrl    String?
+  status      PostStatus @default(DRAFT)
+  publishedAt DateTime?
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+
+  @@map("case_studies")
+}
+
+model QuickScanResult {
+  id                    String   @id @default(cuid())
+  name                  String
+  email                 String
+  company               String
+  phone                 String?
+  position              String?
+  hasBcmOfficer         Boolean
+  hasCrisisTeam         Boolean
+  responses             Json
+  contextScore          Int
+  leadershipScore       Int
+  planningScore         Int
+  supportScore          Int
+  operationScore        Int
+  performanceScore      Int
+  improvementScore      Int
+  overallScore          Int
+  maturityLevel         String
+  reportGenerated       Boolean  @default(false)
+  reportUrl             String?
+  wantsConsultation     Boolean  @default(false)
+  consultationScheduled Boolean  @default(false)
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+
+  @@map("quick_scan_results")
+}
+
+model NewsletterSubscriber {
+  id             String    @id @default(cuid())
+  email          String    @unique
+  name           String?
+  company        String?
+  isActive       Boolean   @default(true)
+  preferences    String[]
+  source         String?
+  leadScore      Int       @default(0)
+  lastEngagement DateTime?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  @@map("newsletter_subscribers")
+}
+
+model SocialMediaPost {
+  id          String         @id @default(cuid())
+  platform    SocialPlatform
+  postId      String
+  content     String
+  url         String
+  imageUrl    String?
+  publishedAt DateTime
+  engagements Int            @default(0)
+  createdAt   DateTime       @default(now())
+
+  @@unique([platform, postId])
+  @@map("social_media_posts")
+}
+
+model ChatConversation {
+  id          String        @id @default(cuid())
+  sessionId   String        @unique
+  userEmail   String?
+  userName    String?
+  userCompany String?
+  userPhone   String?
+  leadScore   Int           @default(0)
+  status      ChatStatus    @default(ACTIVE)
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+  messages    ChatMessage[]
+
+  @@map("chat_conversations")
+}
+
+model ChatMessage {
+  id             String           @id @default(cuid())
+  conversationId String
+  role           MessageRole
+  content        String
+  metadata       Json?
+  createdAt      DateTime         @default(now())
+  conversation   ChatConversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+
+  @@map("chat_messages")
+}
+
+model ChatbotConfig {
+  id                       String   @id @default(cuid())
+  name                     String   @unique
+  welcomeMessage           String
+  fallbackMessage          String
+  leadQualificationEnabled Boolean  @default(true)
+  autoResponseEnabled      Boolean  @default(true)
+  businessHours            Json
+  isActive                 Boolean  @default(true)
+  createdAt                DateTime @default(now())
+  updatedAt                DateTime @updatedAt
+
+  @@map("chatbot_config")
+}
+
+model CrmContact {
+  id             String        @id @default(cuid())
+  hubspotId      String?       @unique
+  email          String        @unique
+  firstName      String
+  lastName       String
+  company        String?
+  phone          String?
+  jobTitle       String?
+  leadScore      Int           @default(0)
+  lifecycleStage String?
+  leadSource     String?
+  lastActivity   DateTime?
+  isActive       Boolean       @default(true)
+  syncedAt       DateTime?
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+  activities     CrmActivity[]
+
+  @@map("crm_contacts")
+}
+
+model CrmActivity {
+  id          String     @id @default(cuid())
+  contactId   String
+  type        String
+  subject     String
+  description String?
+  outcome     String?
+  scheduledAt DateTime?
+  completedAt DateTime?
+  createdAt   DateTime   @default(now())
+  contact     CrmContact @relation(fields: [contactId], references: [id], onDelete: Cascade)
+
+  @@map("crm_activities")
+}
+
+model AnalyticsEvent {
+  id        String   @id @default(cuid())
+  sessionId String
+  eventType String
+  eventData Json
+  userAgent String?
+  ipAddress String?
+  referrer  String?
+  page      String?
+  userId    String?
+  timestamp DateTime @default(now())
+
+  @@map("analytics_events")
+}
+
+model ConversionMetrics {
+  id                   String   @id @default(cuid())
+  date                 DateTime @unique @db.Date
+  pageViews            Int      @default(0)
+  uniqueVisitors       Int      @default(0)
+  contactForms         Int      @default(0)
+  quickScans           Int      @default(0)
+  newsletterSignups    Int      @default(0)
+  consultationBookings Int      @default(0)
+  conversionRate       Float    @default(0.0)
+
+  @@map("conversion_metrics")
+}
+
+model FaqCategory {
+  id          String   @id @default(cuid())
+  name        String   @unique
+  slug        String   @unique
+  description String?
+  order       Int      @default(0)
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  faqs        Faq[]
+
+  @@map("faq_categories")
+}
+
+model Faq {
+  id         String      @id @default(cuid())
+  categoryId String
+  question   String
+  answer     String
+  order      Int         @default(0)
+  isActive   Boolean     @default(true)
+  viewCount  Int         @default(0)
+  createdAt  DateTime    @default(now())
+  updatedAt  DateTime    @updatedAt
+  category   FaqCategory @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+
+  @@map("faqs")
+}
+
+model TeamMember {
+  id          String   @id @default(cuid())
+  name        String
+  position    String
+  bio         String
+  imageUrl    String?
+  email       String?
+  phone       String?
+  linkedinUrl String?
+  expertise   String[]
+  isActive    Boolean  @default(true)
+  order       Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@map("team_members")
+}
+
+model Customer {
+  id             String             @id @default(cuid())
+  email          String             @unique
+  name           String
+  company        String
+  phone          String?
+  hashedPassword String
+  isActive       Boolean            @default(true)
+  lastLogin      DateTime?
+  createdAt      DateTime           @default(now())
+  updatedAt      DateTime           @updatedAt
+  documents      CustomerDocument[]
+  projects       CustomerProject[]
+
+  @@map("customers")
+}
+
+model CustomerProject {
+  id          String             @id @default(cuid())
+  customerId  String
+  name        String
+  description String?
+  status      ProjectStatus      @default(ACTIVE)
+  progress    Int                @default(0)
+  startDate   DateTime
+  endDate     DateTime?
+  createdAt   DateTime           @default(now())
+  updatedAt   DateTime           @updatedAt
+  documents   CustomerDocument[]
+  customer    Customer           @relation(fields: [customerId], references: [id], onDelete: Cascade)
+
+  @@map("customer_projects")
+}
+
+model CustomerDocument {
+  id             String           @id @default(cuid())
+  customerId     String
+  projectId      String?
+  title          String
+  description    String?
+  fileName       String
+  fileUrl        String
+  fileSize       Int?
+  mimeType       String?
+  isConfidential Boolean          @default(false)
+  uploadedAt     DateTime         @default(now())
+  customer       Customer         @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  project        CustomerProject? @relation(fields: [projectId], references: [id])
+
+  @@map("customer_documents")
+}
+
+model Admin {
+  id             String    @id @default(cuid())
+  email          String    @unique
+  name           String
+  hashedPassword String
+  role           AdminRole @default(ADMIN)
+  isActive       Boolean   @default(true)
+  lastLogin      DateTime?
+  failedLogins   Int       @default(0)
+  lockoutUntil   DateTime?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+  createdBy      String?
+  accounts       Account[]
+  sessions       Session[]
+
+  @@map("admins")
+}
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String?
+  access_token      String?
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String?
+  session_state     String?
+  user              Admin   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+  @@map("accounts")
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         Admin    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("sessions")
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+  @@map("verification_tokens")
+}
+
+model AdminActivityLog {
+  id        String   @id @default(cuid())
+  adminId   String
+  action    String
+  resource  String
+  details   Json?
+  ipAddress String?
+  userAgent String?
+  createdAt DateTime @default(now())
+
+  @@map("admin_activity_logs")
+}
+
+model ApiKey {
+  id          String     @id @default(cuid())
+  name        String
+  key         String     @unique
+  hashedKey   String
+  adminId     String
+  permissions String[]
+  rateLimit   Int        @default(1000)
+  isActive    Boolean    @default(true)
+  lastUsed    DateTime?
+  usageCount  Int        @default(0)
+  expiresAt   DateTime?
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+  apiUsage    ApiUsage[]
+
+  @@map("api_keys")
+}
+
+model ApiUsage {
+  id        String   @id @default(cuid())
+  apiKeyId  String
+  endpoint  String
+  method    String
+  ipAddress String
+  userAgent String?
+  status    Int
+  duration  Int
+  timestamp DateTime @default(now())
+  apiKey    ApiKey   @relation(fields: [apiKeyId], references: [id], onDelete: Cascade)
+
+  @@index([apiKeyId, timestamp])
+  @@map("api_usage")
+}
+
+model SessionActivity {
+  id           String   @id @default(cuid())
+  sessionToken String
+  adminId      String
+  activity     String
+  ipAddress    String
+  userAgent    String
+  location     String?
+  isSuccessful Boolean  @default(true)
+  metadata     Json?
+  timestamp    DateTime @default(now())
+
+  @@index([sessionToken])
+  @@index([adminId, timestamp])
+  @@map("session_activities")
+}
+
+model ActiveSession {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  adminId      String
+  ipAddress    String
+  userAgent    String
+  lastActivity DateTime @default(now())
+  isActive     Boolean  @default(true)
+  createdAt    DateTime @default(now())
+
+  @@index([adminId])
+  @@map("active_sessions")
+}
+
+model SecurityEvent {
+  id          String            @id @default(cuid())
+  type        SecurityEventType
+  severity    SecuritySeverity
+  title       String
+  description String
+  source      String
+  adminId     String?
+  sessionId   String?
+  ipAddress   String
+  userAgent   String?
+  metadata    Json?
+  resolved    Boolean           @default(false)
+  resolvedBy  String?
+  resolvedAt  DateTime?
+  createdAt   DateTime          @default(now())
+
+  @@index([type, severity])
+  @@index([createdAt])
+  @@map("security_events")
+}
+
+model FileUpload {
+  id           String         @id @default(cuid())
+  fileName     String
+  originalName String
+  filePath     String
+  fileSize     Int
+  mimeType     String
+  checksum     String
+  uploadedBy   String
+  scanStatus   FileScanStatus @default(PENDING)
+  scanResult   Json?
+  isQuarantine Boolean        @default(false)
+  uploadedAt   DateTime       @default(now())
+  scannedAt    DateTime?
+
+  @@map("file_uploads")
+}
+
+model DataRetentionPolicy {
+  id            String   @id @default(cuid())
+  dataType      String   @unique
+  retentionDays Int
+  description   String
+  isActive      Boolean  @default(true)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@map("data_retention_policies")
+}
+
+model DataProcessingRequest {
+  id           String                    @id @default(cuid())
+  email        String
+  requestType  DataProcessingRequestType
+  status       RequestStatus             @default(PENDING)
+  requestData  Json?
+  responseData Json?
+  processedBy  String?
+  processedAt  DateTime?
+  createdAt    DateTime                  @default(now())
+
+  @@map("data_processing_requests")
+}
+
+model ConsentRecord {
+  id            String    @id @default(cuid())
+  email         String
+  consentType   String
+  hasConsent    Boolean
+  consentSource String
+  ipAddress     String
+  userAgent     String?
+  withdrawnAt   DateTime?
+  createdAt     DateTime  @default(now())
+
+  @@index([email, consentType])
+  @@map("consent_records")
+}
+
+model ApiHealthCheck {
+  id           String   @id @default(cuid())
+  endpoint     String
+  method       String
+  status       Int
+  responseTime Int
+  error        String?
+  checkedAt    DateTime @default(now())
+
+  @@index([endpoint, checkedAt])
+  @@map("api_health_checks")
+}
+
+model SecurityAlert {
+  id             String           @id @default(cuid())
+  type           String
+  severity       SecuritySeverity
+  title          String
+  message        String
+  metadata       Json?
+  triggered      Boolean          @default(false)
+  acknowledged   Boolean          @default(false)
+  acknowledgedBy String?
+  acknowledgedAt DateTime?
+  createdAt      DateTime         @default(now())
+
+  @@index([severity, triggered])
+  @@map("security_alerts")
+}
+
+model AdminSecurityPreference {
+  id                    String    @id @default(cuid())
+  adminId               String    @unique
+  maxConcurrentSessions Int       @default(3)
+  sessionTimeoutMinutes Int       @default(120)
+  requireTwoFactor      Boolean   @default(false)
+  allowedIpRanges       String[]
+  securityNotifications Boolean   @default(true)
+  lastSecurityReview    DateTime?
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
+
+  @@map("admin_security_preferences")
+}
+
+model ThreatDetection {
+  id            String           @id @default(cuid())
+  type          ThreatType
+  severity      SecuritySeverity
+  source        String
+  description   String
+  indicators    Json
+  riskScore     Int              @default(0)
+  status        ThreatStatus     @default(ACTIVE)
+  firstDetected DateTime         @default(now())
+  lastSeen      DateTime         @default(now())
+  actionTaken   String?
+  resolvedBy    String?
+  resolvedAt    DateTime?
+  metadata      Json?
+
+  @@index([type, severity])
+  @@index([source, firstDetected])
+  @@map("threat_detections")
+}
+
+model UserAnomalyProfile {
+  id                  String   @id @default(cuid())
+  userId              String
+  userType            String
+  baselineEstablished Boolean  @default(false)
+  avgSessionDuration  Int?
+  commonIpAddresses   String[]
+  commonUserAgents    String[]
+  commonAccessTimes   Json?
+  commonLocations     String[]
+  anomalyThreshold    Float    @default(0.75)
+  lastUpdated         DateTime @updatedAt
+  createdAt           DateTime @default(now())
+
+  @@unique([userId, userType])
+  @@map("user_anomaly_profiles")
+}
+
+model BruteForceAttempt {
+  id             String    @id @default(cuid())
+  ipAddress      String
+  targetType     String
+  targetId       String?
+  attempts       Int       @default(1)
+  windowStart    DateTime
+  windowEnd      DateTime
+  isBlocked      Boolean   @default(false)
+  blockExpiresAt DateTime?
+  metadata       Json?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  @@index([ipAddress, targetType])
+  @@index([windowStart, windowEnd])
+  @@map("brute_force_attempts")
+}
+
+model IpIntelligence {
+  id               String       @id @default(cuid())
+  ipAddress        String       @unique
+  reputation       IpReputation @default(UNKNOWN)
+  riskScore        Int          @default(0)
+  country          String?
+  city             String?
+  organization     String?
+  isTor            Boolean      @default(false)
+  isVpn            Boolean      @default(false)
+  isDatacenter     Boolean      @default(false)
+  threatCategories String[]
+  lastChecked      DateTime     @default(now())
+  checkedCount     Int          @default(1)
+  metadata         Json?
+
+  @@map("ip_intelligence")
+}
+
+model SecurityMetric {
+  id         String   @id @default(cuid())
+  metricType String
+  value      Float
+  timestamp  DateTime @default(now())
+  dimensions Json?
+
+  @@index([metricType, timestamp])
+  @@map("security_metrics")
+}
+
+model IncidentResponse {
+  id               String           @id @default(cuid())
+  triggerEventId   String
+  responseType     ResponseType
+  status           IncidentStatus   @default(PENDING)
+  priority         IncidentPriority @default(MEDIUM)
+  assignedTo       String?
+  title            String
+  description      String
+  actionsPlan      Json
+  executedActions  Json?
+  resolution       String?
+  timeToDetection  Int?
+  timeToResponse   Int?
+  timeToResolution Int?
+  createdAt        DateTime         @default(now())
+  resolvedAt       DateTime?
+
+  @@index([status, priority])
+  @@index([createdAt])
+  @@map("incident_responses")
+}
+
+model ComplianceAuditLog {
+  id                    String                  @id @default(cuid())
+  complianceType        String
+  action                String
+  resource              String
+  resourceId            String?
+  oldValues             Json?
+  newValues             Json?
+  complianceImpact      String?
+  performedBy           String
+  ipAddress             String
+  userAgent             String?
+  businessJustification String?
+  approved              Boolean                 @default(false)
+  approvedBy            String?
+  approvedAt            DateTime?
+  retentionUntil        DateTime?
+  classification        DataClassificationLevel @default(INTERNAL)
+  timestamp             DateTime                @default(now())
+
+  @@index([complianceType, timestamp])
+  @@index([performedBy, timestamp])
+  @@map("compliance_audit_logs")
+}
+
+model DataClassification {
+  id              String                  @id @default(cuid())
+  resourceType    String
+  resourceId      String
+  classification  DataClassificationLevel
+  sensitivity     String
+  retentionPeriod Int
+  accessControls  Json
+  encryptionReq   Boolean                 @default(false)
+  auditRequired   Boolean                 @default(false)
+  classifiedBy    String
+  classifiedAt    DateTime                @default(now())
+  reviewDate      DateTime
+
+  @@unique([resourceType, resourceId])
+  @@index([classification, sensitivity])
+  @@map("data_classifications")
+}
+
+model PrivacyImpactAssessment {
+  id                      String    @id @default(cuid())
+  title                   String
+  description             String
+  dataTypes               String[]
+  processingPurpose       String
+  legalBasis              String
+  dataSubjects            String[]
+  riskLevel               String
+  mitigationMeasures      Json
+  dataRetentionPeriod     Int
+  sharingWithThirdParties Boolean   @default(false)
+  thirdParties            Json?
+  dpoApproval             Boolean   @default(false)
+  approvedBy              String?
+  approvedAt              DateTime?
+  nextReviewDate          DateTime
+  status                  String    @default("DRAFT")
+  createdBy               String
+  createdAt               DateTime  @default(now())
+  updatedAt               DateTime  @updatedAt
+
+  @@map("privacy_impact_assessments")
+}
+
+model SecurityTest {
+  id              String     @id @default(cuid())
+  testType        String
+  status          TestStatus @default(SCHEDULED)
+  target          String
+  methodology     String?
+  findings        Json?
+  riskRating      String?
+  recommendations Json?
+  executedBy      String?
+  scheduledDate   DateTime?
+  startedAt       DateTime?
+  completedAt     DateTime?
+  nextTestDate    DateTime?
+  createdAt       DateTime   @default(now())
+
+  @@index([testType, status])
+  @@map("security_tests")
+}
+
+model ApiSecurityPolicy {
+  id                 String   @id @default(cuid())
+  policyName         String   @unique
+  description        String
+  endpoints          String[]
+  methods            String[]
+  rateLimits         Json
+  authenticationReq  Boolean  @default(true)
+  authorizationReq   Boolean  @default(true)
+  inputValidation    Json
+  outputSanitization Json
+  loggingLevel       String   @default("STANDARD")
+  alertThresholds    Json
+  isActive           Boolean  @default(true)
+  version            Int      @default(1)
+  createdBy          String
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+
+  @@map("api_security_policies")
+}
+
+model SecurityAutomation {
+  id                String           @id @default(cuid())
+  workflowName      String           @unique
+  description       String
+  triggerConditions Json
+  actions           Json
+  status            AutomationStatus @default(ACTIVE)
+  lastExecuted      DateTime?
+  executionCount    Int              @default(0)
+  successCount      Int              @default(0)
+  failureCount      Int              @default(0)
+  averageRuntime    Int?
+  configuration     Json
+  createdBy         String
+  createdAt         DateTime         @default(now())
+  updatedAt         DateTime         @updatedAt
+
+  @@map("security_automations")
+}
+
+model TwoFactorAuth {
+  id             String    @id @default(cuid())
+  userId         String
+  userType       String
+  method         String
+  secret         String?
+  phoneNumber    String?
+  email          String?
+  isVerified     Boolean   @default(false)
+  backupCodes    String[]
+  lastUsed       DateTime?
+  failedAttempts Int       @default(0)
+  lockedUntil    DateTime?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  @@unique([userId, userType, method])
+  @@map("two_factor_auth")
+}
+
+model SecurityNotification {
+  id        String           @id @default(cuid())
+  userId    String
+  userType  String
+  type      NotificationType
+  title     String
+  message   String
+  severity  SecuritySeverity
+  isRead    Boolean          @default(false)
+  readAt    DateTime?
+  actionUrl String?
+  metadata  Json?
+  expiresAt DateTime?
+  createdAt DateTime         @default(now())
+
+  @@index([userId, userType, isRead])
+  @@index([createdAt])
+  @@map("security_notifications")
+}
+
+model UserSecurityPreference {
+  id                       String   @id @default(cuid())
+  userId                   String
+  userType                 String
+  twoFactorEnabled         Boolean  @default(false)
+  preferredTwoFactorMethod String?
+  securityNotifications    Boolean  @default(true)
+  loginNotifications       Boolean  @default(true)
+  unusualActivityAlerts    Boolean  @default(true)
+  passwordChangeReminders  Boolean  @default(true)
+  securityDigestFreq       String   @default("WEEKLY")
+  allowedIpRanges          String[]
+  sessionTimeout           Int      @default(120)
+  createdAt                DateTime @default(now())
+  updatedAt                DateTime @updatedAt
+
+  @@unique([userId, userType])
+  @@map("user_security_preferences")
+}
+
+model SecuritySelfService {
+  id                String            @id @default(cuid())
+  userId            String
+  userType          String
+  action            SelfServiceAction
+  status            String            @default("PENDING")
+  description       String
+  metadata          Json?
+  verificationToken String?
+  expiresAt         DateTime?
+  completedAt       DateTime?
+  ipAddress         String
+  userAgent         String?
+  createdAt         DateTime          @default(now())
+
+  @@index([userId, userType, action])
+  @@map("security_self_service")
+}
+
+model SecurityPrediction {
+  id              String   @id @default(cuid())
+  predictionType  String
+  target          String
+  riskScore       Float
+  confidence      Float
+  factors         Json
+  recommendations Json
+  modelVersion    String
+  validUntil      DateTime
+  createdAt       DateTime @default(now())
+
+  @@index([predictionType, target])
+  @@index([createdAt])
+  @@map("security_predictions")
+}
+
+model SessionTracker {
+  id                String    @id @default(cuid())
+  sessionId         String    @unique
+  userId            String
+  userType          String
+  startTime         DateTime  @default(now())
+  endTime           DateTime?
+  duration          Int?
+  activityCount     Int       @default(0)
+  ipAddress         String
+  userAgent         String
+  location          String?
+  riskScore         Float     @default(0.0)
+  isActive          Boolean   @default(true)
+  terminationReason String?
+
+  @@index([userId, userType])
+  @@index([startTime])
+  @@map("session_trackers")
+}
+
+enum AdminRole {
+  SUPER_ADMIN
+  ADMIN
+  EDITOR
+  VIEWER
+}
+
+enum PostStatus {
+  DRAFT
+  PUBLISHED
+  ARCHIVED
+}
+
+enum SocialPlatform {
+  LINKEDIN
+  TWITTER
+  FACEBOOK
+}
+
+enum ChatStatus {
+  ACTIVE
+  QUALIFIED
+  CONVERTED
+  ARCHIVED
+}
+
+enum MessageRole {
+  USER
+  ASSISTANT
+  SYSTEM
+}
+
+enum ProjectStatus {
+  ACTIVE
+  COMPLETED
+  PAUSED
+  CANCELLED
+}
+
+enum SecurityEventType {
+  AUTHENTICATION_FAILURE
+  RATE_LIMIT_EXCEEDED
+  SUSPICIOUS_ACTIVITY
+  UNAUTHORIZED_ACCESS
+  MALICIOUS_REQUEST
+  SESSION_HIJACKING
+  BRUTE_FORCE_ATTACK
+  SQL_INJECTION_ATTEMPT
+  XSS_ATTEMPT
+  CSRF_ATTEMPT
+  FILE_UPLOAD_THREAT
+  API_ABUSE
+  PRIVILEGE_ESCALATION
+  DATA_BREACH_ATTEMPT
+}
+
+enum SecuritySeverity {
+  LOW
+  MEDIUM
+  HIGH
+  CRITICAL
+}
+
+enum FileScanStatus {
+  PENDING
+  SCANNING
+  SAFE
+  THREAT_DETECTED
+  QUARANTINED
+  SCAN_FAILED
+}
+
+enum DataProcessingRequestType {
+  ACCESS_REQUEST
+  DELETION_REQUEST
+  RECTIFICATION_REQUEST
+  PORTABILITY_REQUEST
+  RESTRICTION_REQUEST
+}
+
+enum RequestStatus {
+  PENDING
+  IN_PROGRESS
+  COMPLETED
+  REJECTED
+  CANCELLED
+}
+
+enum ThreatType {
+  BRUTE_FORCE
+  DDoS
+  MALICIOUS_IP
+  ANOMALOUS_BEHAVIOR
+  DATA_EXFILTRATION
+  PRIVILEGE_ESCALATION
+  ACCOUNT_TAKEOVER
+  API_ABUSE
+  INSIDER_THREAT
+  ADVANCED_PERSISTENT_THREAT
+}
+
+enum ThreatStatus {
+  ACTIVE
+  MONITORING
+  MITIGATED
+  RESOLVED
+  FALSE_POSITIVE
+}
+
+enum IpReputation {
+  TRUSTED
+  NEUTRAL
+  UNKNOWN
+  SUSPICIOUS
+  MALICIOUS
+  BLOCKED
+}
+
+enum ResponseType {
+  AUTOMATED_BLOCK
+  ALERT_ADMIN
+  QUARANTINE_ACCOUNT
+  RATE_LIMIT
+  INVESTIGATION
+  MANUAL_REVIEW
+}
+
+enum IncidentStatus {
+  PENDING
+  INVESTIGATING
+  RESPONDING
+  RESOLVING
+  RESOLVED
+  CLOSED
+}
+
+enum IncidentPriority {
+  LOW
+  MEDIUM
+  HIGH
+  CRITICAL
+}
+
+enum DataClassificationLevel {
+  PUBLIC
+  INTERNAL
+  CONFIDENTIAL
+  RESTRICTED
+  TOP_SECRET
+}
+
+enum TestStatus {
+  SCHEDULED
+  RUNNING
+  COMPLETED
+  FAILED
+  CANCELLED
+}
+
+enum AutomationStatus {
+  ACTIVE
+  PAUSED
+  DISABLED
+  ERROR
+}
+
+enum NotificationType {
+  SECURITY_ALERT
+  LOGIN_NOTIFICATION
+  PASSWORD_CHANGE
+  SUSPICIOUS_ACTIVITY
+  POLICY_UPDATE
+  COMPLIANCE_REMINDER
+  SYSTEM_MAINTENANCE
+}
+
+enum SelfServiceAction {
+  PASSWORD_RESET
+  ENABLE_2FA
+  DISABLE_2FA
+  UPDATE_PHONE
+  UPDATE_EMAIL
+  DOWNLOAD_DATA
+  DELETE_ACCOUNT
+  UPDATE_PREFERENCES
+}
