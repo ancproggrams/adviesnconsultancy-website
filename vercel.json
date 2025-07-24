@@ -1,21 +1,10 @@
-
 {
   "version": 2,
-  "framework": "nextjs",
-  "buildCommand": "npm run build",
-  "devCommand": "npm run dev",
-  "installCommand": "npm install",
-  "outputDirectory": ".next",
   "build": {
     "env": {
       "NEXTAUTH_URL": "https://www.adviesnconsultancy.nl",
       "NEXT_PUBLIC_BASE_URL": "https://www.adviesnconsultancy.nl",
       "API_URL": "https://www.adviesnconsultancy.nl/api"
-    }
-  },
-  "functions": {
-    "app/api/**/*.ts": {
-      "runtime": "nodejs18.x"
     }
   },
   "regions": ["arn1"],
