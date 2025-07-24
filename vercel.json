@@ -18,8 +18,5 @@
     }
   ],
   "redirects": [],
-  "headers": [],
-  "static": {
-    "headers": []
-  }
+  "headers": []
 }
