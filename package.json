@@ -4,8 +4,9 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
-    "start": "ts-node server.ts",
-    "lint": "next lint"
+    "start": "next start",
+    "lint": "next lint",
+    "postinstall": "prisma generate"
   },
   "prisma": {
     "seed": "tsx --require dotenv/config scripts/seed.ts"
