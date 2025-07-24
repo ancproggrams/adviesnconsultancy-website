@@ -1,5 +1,6 @@
 
 
+
 import type { Metadata } from 'next'
 import { Inter } from 'next/font/google'
 import './globals.css'
@@ -7,6 +8,8 @@ import { Providers } from '@/components/providers'
 import { SiteHeader } from '@/components/site-header'
 import { SiteFooter } from '@/components/site-footer'
 import { ChatbotManager } from '@/components/chatbot/chatbot-manager'
+import { Analytics } from '@vercel/analytics/react'
+import { SpeedInsights } from '@vercel/speed-insights/next'
 // COMMENTED OUT FOR TESTING HYDRATION ISSUES
 // import { Toaster } from '@/components/ui/toaster'
 // import { StructuredData } from '@/components/structured-data'
@@ -123,6 +126,12 @@ export default function RootLayout({
             <SiteFooter />
           </div>
           <ChatbotManager />
+          {process.env.NODE_ENV === 'production' && (
+            <>
+              <Analytics />
+              <SpeedInsights />
+            </>
+          )}
         </Providers>
       </body>
     </html>

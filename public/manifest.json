@@ -2,84 +2,121 @@
 {
   "name": "Advies N Consultancy BV",
   "short_name": "ANC",
-  "description": "Professionele IT-consultancy gespecialiseerd in business continuïteit, compliance automatisering en digitale transformatie",
+  "description": "Professionele IT-consultancy gespecialiseerd in business continuïteit, compliance, AI-automatisering en digitale transformatie.",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#ffffff",
   "theme_color": "#1e40af",
   "orientation": "portrait-primary",
-  "scope": "/",
+  "categories": ["business", "productivity", "utilities"],
   "lang": "nl",
-  "categories": ["business", "consulting", "compliance"],
+  "dir": "ltr",
+  "scope": "/",
+  "id": "/",
+  "prefer_related_applications": false,
   "icons": [
     {
-      "src": "/icons/android-chrome-192x192.png",
+      "src": "/icons/icon-72x72.png",
+      "sizes": "72x72",
+      "type": "image/png",
+      "purpose": "maskable any"
+    },
+    {
+      "src": "/icons/icon-96x96.png",
+      "sizes": "96x96",
+      "type": "image/png",
+      "purpose": "maskable any"
+    },
+    {
+      "src": "/icons/icon-128x128.png",
+      "sizes": "128x128",
+      "type": "image/png",
+      "purpose": "maskable any"
+    },
+    {
+      "src": "/icons/icon-144x144.png",
+      "sizes": "144x144",
+      "type": "image/png",
+      "purpose": "maskable any"
+    },
+    {
+      "src": "/icons/icon-152x152.png",
+      "sizes": "152x152",
+      "type": "image/png",
+      "purpose": "maskable any"
+    },
+    {
+      "src": "/icons/icon-192x192.png",
       "sizes": "192x192",
       "type": "image/png",
-      "purpose": "any maskable"
+      "purpose": "maskable any"
     },
     {
-      "src": "/icons/android-chrome-512x512.png",
+      "src": "/icons/icon-384x384.png",
+      "sizes": "384x384",
+      "type": "image/png",
+      "purpose": "maskable any"
+    },
+    {
+      "src": "/icons/icon-512x512.png",
       "sizes": "512x512",
       "type": "image/png",
-      "purpose": "any maskable"
+      "purpose": "maskable any"
     },
     {
-      "src": "/icons/apple-touch-icon.png",
-      "sizes": "180x180",
-      "type": "image/png"
-    },
-    {
-      "src": "/icons/favicon-32x32.png",
-      "sizes": "32x32",
-      "type": "image/png"
-    },
-    {
-      "src": "/icons/favicon-16x16.png",
-      "sizes": "16x16",
-      "type": "image/png"
-    }
-  ],
-  "shortcuts": [
-    {
-      "name": "Quick Scan",
-      "short_name": "Scan",
-      "description": "Start een compliance quick scan",
-      "url": "/compliance-automation#quickscan",
-      "icons": [
-        {
-          "src": "/icons/shortcut-scan.png",
-          "sizes": "96x96",
-          "type": "image/png"
-        }
-      ]
-    },
-    {
-      "name": "Adviesgesprek",
-      "short_name": "Gesprek",
-      "description": "Plan een adviesgesprek",
-      "url": "/adviesgesprek",
-      "icons": [
-        {
-          "src": "/icons/shortcut-consultation.png",
-          "sizes": "96x96",
-          "type": "image/png"
-        }
-      ]
+      "src": "/ANCLOGO.jpeg",
+      "sizes": "512x512",
+      "type": "image/jpeg",
+      "purpose": "any"
     }
   ],
   "screenshots": [
     {
-      "src": "/screenshots/desktop-home.png",
+      "src": "/screenshots/desktop-home.jpg",
       "sizes": "1280x720",
-      "type": "image/png",
-      "form_factor": "wide"
+      "type": "image/jpeg",
+      "form_factor": "wide",
+      "label": "Homepage on desktop"
     },
     {
-      "src": "/screenshots/mobile-home.png",
-      "sizes": "390x844",
-      "type": "image/png",
-      "form_factor": "narrow"
+      "src": "/screenshots/mobile-home.jpg",
+      "sizes": "360x640",
+      "type": "image/jpeg", 
+      "form_factor": "narrow",
+      "label": "Homepage on mobile"
     }
-  ]
+  ],
+  "shortcuts": [
+    {
+      "name": "Contact",
+      "short_name": "Contact",
+      "description": "Contact opnemen met Advies N Consultancy",
+      "url": "/#contact",
+      "icons": [{ "src": "/icons/icon-192x192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "Quick Scan",
+      "short_name": "Scan",
+      "description": "Start een snelle bedrijfsanalyse",
+      "url": "/#quick-scan",
+      "icons": [{ "src": "/icons/icon-192x192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "Diensten",
+      "short_name": "Services",
+      "description": "Bekijk onze diensten",
+      "url": "/diensten",
+      "icons": [{ "src": "/icons/icon-192x192.png", "sizes": "192x192" }]
+    }
+  ],
+  "related_applications": [],
+  "protocol_handlers": [
+    {
+      "protocol": "mailto",
+      "url": "/#contact?email=%s"
+    }
+  ],
+  "edge_side_panel": {
+    "preferred_width": 480
+  }
 }
