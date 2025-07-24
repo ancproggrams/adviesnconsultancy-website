@@ -2,9 +2,9 @@
 {
   "version": 2,
   "framework": "nextjs",
-  "buildCommand": "next build",
+  "buildCommand": "npx prisma generate && yarn build",
   "outputDirectory": ".next",
-  "installCommand": "yarn install --frozen-lockfile",
+  "installCommand": "yarn install --immutable",
   "build": {
     "env": {
       "NEXTAUTH_URL": "https://www.adviesnconsultancy.nl",
