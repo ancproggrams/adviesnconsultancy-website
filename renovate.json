@@ -1,0 +1,179 @@
+
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "description": "Renovate configuration for enhanced dependency management alongside Dependabot",
+  "extends": [
+    "config:base",
+    "config:recommended",
+    ":semanticCommits",
+    ":dependencyDashboard",
+    ":gitSignOff",
+    "helpers:pinGitHubActionDigests"
+  ],
+  "timezone": "Europe/Amsterdam",
+  "schedule": [
+    "after 10pm every weekday",
+    "before 5am every weekday",
+    "every weekend"
+  ],
+  "labels": ["dependencies", "renovate"],
+  "assignees": ["ancproggrams"],
+  "reviewers": ["ancproggrams"],
+  "dependencyDashboard": true,
+  "dependencyDashboardTitle": "🤖 Renovate Dependency Dashboard",
+  "dependencyDashboardHeader": "Deze dashboard toont alle dependency updates die door Renovate worden beheerd. Updates worden automatisch gemerged voor patch/minor versies, major updates vereisen handmatige review.",
+  "dependencyDashboardFooter": "📋 Voor vragen over dependency management, zie de README.md documentatie.",
+  "prHourlyLimit": 3,
+  "prConcurrentLimit": 5,
+  "branchConcurrentLimit": 10,
+  "minimumReleaseAge": "3 days",
+  "stabilityDays": 3,
+  "internalChecksFilter": "strict",
+  "configWarningReuseIssue": false,
+  "semanticCommits": "enabled",
+  "semanticCommitType": "chore",
+  "semanticCommitScope": "deps",
+  "commitMessagePrefix": "🔧 ",
+  "commitMessageAction": "update",
+  "commitMessageTopic": "{{depName}}",
+  "commitMessageExtra": "to {{newVersion}}",
+  "branchPrefix": "renovate/",
+  "branchNameStrict": true,
+  "gitAuthor": "Renovate Bot <bot@renovateapp.com>",
+  "platformAutomerge": true,
+  "automerge": false,
+  "automergeType": "pr",
+  "automergeStrategy": "squash",
+  "packageRules": [
+    {
+      "description": "Automerge patch and minor updates for production dependencies",
+      "matchDepTypes": ["dependencies"],
+      "matchUpdateTypes": ["patch", "minor"],
+      "automerge": true,
+      "minimumReleaseAge": "3 days",
+      "internalChecksFilter": "strict"
+    },
+    {
+      "description": "Automerge patch updates for dev dependencies",
+      "matchDepTypes": ["devDependencies"],
+      "matchUpdateTypes": ["patch"],
+      "automerge": true,
+      "minimumReleaseAge": "1 day"
+    },
+    {
+      "description": "Major updates require manual review",
+      "matchUpdateTypes": ["major"],
+      "automerge": false,
+      "labels": ["dependencies", "major-update", "review-required"],
+      "reviewers": ["ancproggrams"],
+      "addLabels": ["breaking-change"]
+    },
+    {
+      "description": "Security updates get highest priority",
+      "matchPackageNames": [
+        "next-auth",
+        "bcryptjs", 
+        "jsonwebtoken",
+        "@next-auth/prisma-adapter"
+      ],
+      "automerge": true,
+      "minimumReleaseAge": "0 days",
+      "labels": ["dependencies", "security", "high-priority"],
+      "prPriority": 10
+    },
+    {
+      "description": "React ecosystem updates - coordinate with Dependabot",
+      "matchPackagePatterns": ["^react", "^@types/react", "^next$"],
+      "schedule": ["after 8pm on sunday"],
+      "automerge": false,
+      "labels": ["dependencies", "react-ecosystem"],
+      "groupName": "React Ecosystem"
+    },
+    {
+      "description": "UI Component libraries",
+      "matchPackagePatterns": ["^@radix-ui/", "^framer-motion", "^lucide-react"],
+      "automerge": true,
+      "matchUpdateTypes": ["patch", "minor"],
+      "groupName": "UI Components",
+      "minimumReleaseAge": "2 days"
+    },
+    {
+      "description": "TypeScript and linting tools",
+      "matchPackagePatterns": ["^@types/", "^eslint", "^typescript", "^@typescript-eslint/"],
+      "automerge": true,
+      "matchUpdateTypes": ["patch", "minor"],
+      "groupName": "TypeScript & Linting",
+      "schedule": ["after 10pm on friday"]
+    },
+    {
+      "description": "Database and ORM updates",
+      "matchPackageNames": ["prisma", "@prisma/client"],
+      "automerge": false,
+      "labels": ["dependencies", "database", "review-required"],
+      "reviewers": ["ancproggrams"],
+      "minimumReleaseAge": "7 days"
+    },
+    {
+      "description": "Testing and build tools",  
+      "matchPackagePatterns": ["^jest", "^@testing-library/", "^cypress", "^playwright"],
+      "automerge": true,
+      "matchUpdateTypes": ["patch", "minor"],
+      "groupName": "Testing Tools"
+    },
+    {
+      "description": "Pin Docker digests for security",
+      "matchDatasources": ["docker"],
+      "pinDigests": true,
+      "automerge": true
+    }
+  ],
+  "vulnerabilityAlerts": {
+    "enabled": true,
+    "automerge": true,
+    "schedule": ["at any time"],
+    "labels": ["security", "vulnerability", "urgent"],
+    "prPriority": 20
+  },
+  "osvVulnerabilityAlerts": true,
+  "separateMajorMinor": true,
+  "separateMultipleMajor": true,
+  "separateMinorPatch": false,
+  "rangeStrategy": "bump",
+  "respectLatest": true,
+  "followTag": "latest",
+  "ignorePresets": [":prHourlyLimit2"],
+  "lockFileMaintenance": {
+    "enabled": true,
+    "automerge": true,
+    "schedule": ["before 5am on monday"],
+    "commitMessageAction": "refresh",
+    "branchTopic": "lock-file-maintenance"
+  },
+  "node": {
+    "supportPolicy": ["lts"]
+  },
+  "npm": {
+    "minimumReleaseAge": "3 days"
+  },
+  "regexManagers": [
+    {
+      "description": "Update Node.js version in Dockerfile",
+      "fileMatch": ["(^|/)Dockerfile$", "(^|/)Dockerfile\\.[^/]*$"],
+      "matchStrings": ["FROM node:(?<currentValue>.*?)\\s"],
+      "datasourceTemplate": "node-version",
+      "depNameTemplate": "node"
+    }
+  ],
+  "customManagers": [
+    {
+      "customType": "regex",
+      "description": "Update package versions in README badges",
+      "fileMatch": ["^README\\.md$"],
+      "matchStrings": [
+        "https://i.ytimg.com/vi/_QAq33kMuLU/maxresdefault.jpg<currentValue>[^-]+)-"
+      ],
+      "datasourceTemplate": "node-version",
+      "depNameTemplate": "node"
+    }
+  ]
+}

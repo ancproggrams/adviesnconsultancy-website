@@ -39,6 +39,131 @@ security:         # Security packages (next-auth, bcryptjs, jsonwebtoken)
 - **Dependency Types**: Both direct en indirect dependencies included
 - **Version Control**: Major version updates voor stable packages ignored
 
+### 🚀 Renovate Configuration
+
+**Enhanced Dependency Management:**
+Het project gebruikt **Renovate** als aanvulling op Dependabot voor geavanceerde dependency management met intelligente automerge regels en uitgebreide configuratiemogelijkheden.
+
+**Scheduling Strategy:**
+- **Schedule**: Avonden en weekends (na 22:00, voor 05:00, weekends)
+- **Coordination**: Complementeert Dependabot (dagelijks 06:00) zonder overlap
+- **Rate Limiting**: Max 3 PR's per uur, 5 gelijktijdig, 10 branches totaal
+- **Stability**: 3-dagen minimum release age voor productie dependencies
+
+**Smart Automerge Rules:**
+```json
+Production Dependencies:
+  - patch/minor: ✅ Automerge (na 3 dagen stabiliteit)
+  - major: ❌ Manual review vereist
+
+Development Dependencies:  
+  - patch: ✅ Automerge (na 1 dag stabiliteit)
+  - minor/major: ❌ Manual review
+
+Security Updates:
+  - alle types: ✅ Immediate automerge (hoogste prioriteit)
+```
+
+**Advanced Package Rules:**
+- **React Ecosystem**: Gecoördineerde updates op zondag (samen met Dependabot)
+- **UI Components**: Gegroepeerde updates (@radix-ui, framer-motion, lucide-react)
+- **TypeScript/Linting**: Vrijdag avond updates voor weekend testing
+- **Database/ORM**: 7-dagen stabiliteit, altijd manual review
+- **Security Packages**: Onmiddellijke updates met vulnerability alerts
+
+**Intelligent Grouping:**
+```yaml
+UI Components:     # @radix-ui/*, framer-motion, lucide-react
+TypeScript & Linting: # @types/*, eslint, typescript, @typescript-eslint/*
+Testing Tools:     # jest, @testing-library/*, cypress, playwright
+Lock File Maintenance: # Maandag ochtend (voor 05:00)
+```
+
+### 🔄 Renovate vs Dependabot Comparison
+
+| Aspect | **Dependabot** | **Renovate** |
+|--------|----------------|--------------|
+| **Scheduling** | ⭐ Dagelijks 06:00 CET | ⭐ Avonden/weekends |
+| **Automerge** | ❌ Geen native support | ✅ Geavanceerde regels |
+| **Grouping** | ✅ Basis grouping | ⭐ Intelligente grouping |
+| **Stability** | ❌ Geen release age check | ✅ Configureerbare stabiliteit |
+| **Security** | ✅ GitHub security alerts | ⭐ OSV + GitHub alerts |
+| **Configuration** | ✅ YAML-based (.github/) | ⭐ JSON schema validation |
+| **Ecosystem** | ✅ Native GitHub integration | ✅ Multi-platform support |
+| **Customization** | ⭐ GitHub-optimized | ⭐ Highly customizable |
+
+**Waarom Beide Systemen?**
+
+**Dependabot Voordelen:**
+- 🔐 **Native GitHub Security**: Directe integratie met GitHub Security tab
+- 🚀 **Reliable & Fast**: Bewezen track record en snelle updates  
+- 📋 **Simple Configuration**: Eenvoudige YAML configuratie in .github/
+- 🛡️ **Security Focus**: Prioriteit op security alerts en vulnerability patches
+
+**Renovate Voordelen:**
+- 🤖 **Intelligent Automerge**: Geavanceerde regels gebaseerd op update type
+- ⏰ **Flexible Scheduling**: Complexe scheduling met timezone support
+- 📊 **Dependency Dashboard**: Uitgebreide visibility en management UI
+- 🔧 **Advanced Customization**: Regex managers, custom rules, en workflows
+- 📈 **Release Stability**: Minimum age checks voor productie-ready updates
+- 🔍 **Better Grouping**: Semantische grouping van gerelateerde dependencies
+
+### 🔧 Integration Guidelines
+
+**Conflict Prevention:**
+- **Time Separation**: Dependabot (06:00), Renovate (22:00-05:00)
+- **Different Strengths**: Dependabot voor security, Renovate voor automation
+- **Coordinated Updates**: React ecosystem updates op vaste tijden
+- **Branch Management**: Verschillende branch prefixes (`dependabot/` vs `renovate/`)
+
+**Maintainer Workflow:**
+
+**Daily (06:00-09:00):**
+1. Review Dependabot security updates (hoogste prioriteit)
+2. Check GitHub Security tab voor vulnerability alerts
+3. Manual merge van critical security patches
+
+**Weekly (Maandag ochtend):**
+1. Review Renovate dependency dashboard
+2. Approve/merge accumulated minor updates
+3. Review major version updates in batches
+4. Check lock file maintenance results
+
+**Emergency Protocol:**
+1. **Critical Security**: Beide systemen triggeren immediate updates
+2. **Breaking Changes**: Manual review altijd vereist voor major versions
+3. **Failed Updates**: Automatic rollback en incident creation
+4. **Dependency Conflicts**: Manual resolution met priority op security
+
+**Best Practices:**
+
+**Voor Developers:**
+```bash
+# Check dependency status
+npm audit
+npm outdated
+
+# Review Renovate dashboard
+# → GitHub repository → Insights → Dependency graph → Dependabot/Renovate
+
+# Test updates locally
+npm ci
+npm run build
+npm run test
+```
+
+**Voor Maintainers:**
+```bash
+# Enable/disable Renovate
+# Edit renovate.json → "enabled": false
+
+# Emergency dependency freeze
+# Add to renovate.json → "ignorePresets": [":all"]
+
+# Override automerge temporarily  
+# Label PR met "renovate:stop-updating"
+```
+
 ### 🛡️ Security Workflows
 
 #### 1. Dependency Security Audit (`dependency-audit.yml`)
