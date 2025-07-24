@@ -1,0 +1,69 @@
+
+# Dependabot configuration for automated dependency updates
+# https://docs.github.com/en/code-security/dependabot/dependabot-version-updates/configuration-options-for-the-dependabot.yml-file
+
+version: 2
+updates:
+  # Enable version updates for npm packages
+  - package-ecosystem: "npm"
+    directory: "/"
+    schedule:
+      interval: "daily"
+      time: "06:00"
+      timezone: "Europe/Amsterdam"
+    # Maximum number of open pull requests for version updates
+    open-pull-requests-limit: 5
+    # Commit message configuration
+    commit-message:
+      prefix: "chore(deps)"
+      prefix-development: "chore(deps-dev)"
+      include: "scope"
+    # Assignees and reviewers
+    assignees:
+      - "ancproggrams"
+    reviewers:
+      - "ancproggrams"
+    # Allow both direct and indirect dependencies
+    allow:
+      - dependency-type: "direct"
+      - dependency-type: "indirect"
+    # Group updates for better management
+    groups:
+      # Group React ecosystem updates
+      react:
+        patterns:
+          - "react*"
+          - "@types/react*"
+          - "next"
+      # Group UI component libraries
+      ui-components:
+        patterns:
+          - "@radix-ui/*"
+          - "framer-motion"
+          - "lucide-react"
+      # Group development dependencies
+      dev-dependencies:
+        dependency-type: "development"
+        patterns:
+          - "@types/*"
+          - "eslint"
+          - "typescript"
+          - "tailwindcss"
+      # Group security-related packages
+      security:
+        patterns:
+          - "next-auth"
+          - "bcryptjs"
+          - "jsonwebtoken"
+          - "@next-auth/*"
+    # Ignore specific versions or packages if needed
+    ignore:
+      # Ignore major version updates for stable packages
+      - dependency-name: "react"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "next"
+        update-types: ["version-update:semver-major"]
+    # Rebase strategy for pull requests
+    rebase-strategy: "auto"
+    # Target branch for pull requests
+    target-branch: "main"

@@ -1,0 +1,294 @@
+
+# GitHub Actions workflow for automated dependency auditing and security scanning
+name: 🔍 Dependency Security Audit
+
+on:
+  # Run on schedule (weekly on Mondays at 8:00 AM CET)
+  schedule:
+    - cron: '0 6 * * 1'  # Every Monday at 06:00 UTC (08:00 CET)
+  
+  # Run on push to main branch
+  push:
+    branches: [ main ]
+    paths:
+      - 'package.json'
+      - 'package-lock.json'
+      - 'yarn.lock'
+      - '.github/workflows/dependency-audit.yml'
+  
+  # Run on pull requests that change dependencies
+  pull_request:
+    branches: [ main ]
+    paths:
+      - 'package.json'
+      - 'package-lock.json'
+      - 'yarn.lock'
+  
+  # Allow manual trigger
+  workflow_dispatch:
+    inputs:
+      audit_level:
+        description: 'Audit level (low, moderate, high, critical)'
+        required: false
+        default: 'moderate'
+        type: choice
+        options:
+          - low
+          - moderate
+          - high
+          - critical
+
+# Set permissions for security scanning
+permissions:
+  contents: read
+  security-events: write
+  actions: read
+
+jobs:
+  dependency-audit:
+    name: 🛡️ Security Audit
+    runs-on: ubuntu-latest
+    
+    strategy:
+      matrix:
+        node-version: [16, 18, 20]
+        include:
+          - node-version: 18
+            primary: true
+    
+    steps:
+      - name: 📥 Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      
+      - name: 🏷️ Setup Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node-version }}
+          cache: 'npm'
+          cache-dependency-path: 'package-lock.json'
+      
+      - name: 📦 Install dependencies
+        run: |
+          npm ci --audit=false
+          npm ls --depth=0
+      
+      - name: 🔍 Run npm audit
+        id: npm-audit
+        run: |
+          echo "Running npm audit..."
+          npm audit --audit-level=${{ github.event.inputs.audit_level || 'moderate' }} --json > audit-results.json || true
+          
+          # Check if there are any vulnerabilities
+          VULN_COUNT=$(cat audit-results.json | jq -r '.metadata.vulnerabilities.total // 0')
+          echo "vulnerability-count=$VULN_COUNT" >> $GITHUB_OUTPUT
+          
+          # Generate human-readable report
+          npm audit --audit-level=${{ github.event.inputs.audit_level || 'moderate' }} > audit-report.txt || true
+          
+          echo "Found $VULN_COUNT total vulnerabilities"
+        continue-on-error: true
+      
+      - name: 🔧 Generate audit fix suggestions
+        if: steps.npm-audit.outputs.vulnerability-count > 0
+        run: |
+          echo "Generating fix suggestions..."
+          npm audit fix --dry-run --json > audit-fix-suggestions.json || true
+          npm audit fix --dry-run > audit-fix-report.txt || true
+        continue-on-error: true
+      
+      - name: 📊 Analyze package outdated status
+        run: |
+          echo "Checking for outdated packages..."
+          npm outdated --json > outdated-packages.json || true
+          npm outdated > outdated-report.txt || true
+        continue-on-error: true
+      
+      - name: 🏥 Check package health
+        run: |
+          echo "Checking package health metrics..."
+          
+          # Create package health report
+          cat > package-health-check.js << 'EOF'
+          const fs = require('fs');
+          const packageJson = JSON.parse(fs.readFileSync('package.json', 'utf8'));
+          
+          const report = {
+            name: packageJson.name,
+            version: packageJson.version,
+            dependencyCount: {
+              dependencies: Object.keys(packageJson.dependencies || {}).length,
+              devDependencies: Object.keys(packageJson.devDependencies || {}).length,
+              total: Object.keys({...packageJson.dependencies, ...packageJson.devDependencies}).length
+            },
+            scripts: Object.keys(packageJson.scripts || {}),
+            engines: packageJson.engines || {},
+            timestamp: new Date().toISOString()
+          };
+          
+          fs.writeFileSync('package-health.json', JSON.stringify(report, null, 2));
+          console.log('Package Health Report:', JSON.stringify(report, null, 2));
+          EOF
+          
+          node package-health-check.js
+      
+      - name: 🚨 Security vulnerability assessment
+        if: matrix.primary
+        run: |
+          echo "Performing security assessment..."
+          
+          # Check for known security issues in package.json
+          SECURITY_ISSUES=0
+          
+          # Check for deprecated packages
+          if npm ls --depth=0 2>&1 | grep -i "deprecated"; then
+            echo "⚠️  Deprecated packages found"
+            ((SECURITY_ISSUES++))
+          fi
+          
+          # Check for packages with known vulnerabilities
+          if [ -f audit-results.json ]; then
+            HIGH_VULNS=$(cat audit-results.json | jq -r '.metadata.vulnerabilities.high // 0')
+            CRITICAL_VULNS=$(cat audit-results.json | jq -r '.metadata.vulnerabilities.critical // 0')
+            
+            if [ "$HIGH_VULNS" -gt 0 ] || [ "$CRITICAL_VULNS" -gt 0 ]; then
+              echo "🚨 High/Critical vulnerabilities found: High=$HIGH_VULNS, Critical=$CRITICAL_VULNS"
+              ((SECURITY_ISSUES++))
+            fi
+          fi
+          
+          echo "Total security issues found: $SECURITY_ISSUES"
+          echo "security-issues=$SECURITY_ISSUES" >> $GITHUB_OUTPUT
+        id: security-assessment
+      
+      - name: 📄 Generate comprehensive report
+        if: matrix.primary
+        run: |
+          echo "Generating comprehensive dependency report..."
+          
+          cat > dependency-report.md << 'EOF'
+          # 🔍 Dependency Security Audit Report
+          
+          **Generated:** $(date -u +"%Y-%m-%d %H:%M:%S UTC")
+          **Node.js Version:** ${{ matrix.node-version }}
+          **Audit Level:** ${{ github.event.inputs.audit_level || 'moderate' }}
+          
+          ## 📊 Summary
+          EOF
+          
+          if [ -f package-health.json ]; then
+            echo "### Package Health" >> dependency-report.md
+            echo "\`\`\`json" >> dependency-report.md
+            cat package-health.json >> dependency-report.md
+            echo "\`\`\`" >> dependency-report.md
+            echo "" >> dependency-report.md
+          fi
+          
+          if [ -f audit-results.json ]; then
+            echo "### Security Vulnerabilities" >> dependency-report.md
+            echo "\`\`\`" >> dependency-report.md
+            cat audit-report.txt >> dependency-report.md
+            echo "\`\`\`" >> dependency-report.md
+            echo "" >> dependency-report.md
+          fi
+          
+          if [ -f outdated-report.txt ]; then
+            echo "### Outdated Packages" >> dependency-report.md
+            echo "\`\`\`" >> dependency-report.md
+            cat outdated-report.txt >> dependency-report.md
+            echo "\`\`\`" >> dependency-report.md
+            echo "" >> dependency-report.md
+          fi
+          
+          if [ -f audit-fix-report.txt ]; then
+            echo "### Fix Suggestions" >> dependency-report.md
+            echo "\`\`\`" >> dependency-report.md
+            cat audit-fix-report.txt >> dependency-report.md
+            echo "\`\`\`" >> dependency-report.md
+          fi
+      
+      - name: 📤 Upload audit artifacts
+        if: matrix.primary
+        uses: actions/upload-artifact@v4
+        with:
+          name: dependency-audit-report-${{ github.run_number }}
+          path: |
+            audit-results.json
+            audit-report.txt
+            audit-fix-suggestions.json
+            audit-fix-report.txt
+            outdated-packages.json
+            outdated-report.txt
+            package-health.json
+            dependency-report.md
+          retention-days: 30
+      
+      - name: 💬 Comment on PR (if applicable)
+        if: github.event_name == 'pull_request' && matrix.primary && steps.npm-audit.outputs.vulnerability-count > 0
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            
+            let comment = '## 🔍 Dependency Security Audit Results\n\n';
+            comment += `**Vulnerabilities found:** ${{ steps.npm-audit.outputs.vulnerability-count }}\n`;
+            comment += `**Security issues:** ${{ steps.security-assessment.outputs.security-issues }}\n\n`;
+            
+            if (fs.existsSync('audit-report.txt')) {
+              const auditReport = fs.readFileSync('audit-report.txt', 'utf8');
+              comment += '### Audit Summary\n```\n' + auditReport.substring(0, 2000) + '\n```\n';
+            }
+            
+            if (fs.existsSync('audit-fix-report.txt')) {
+              const fixReport = fs.readFileSync('audit-fix-report.txt', 'utf8');
+              comment += '### Suggested Fixes\n```\n' + fixReport.substring(0, 1000) + '\n```\n';
+            }
+            
+            comment += '\n📄 Full audit report available in workflow artifacts.';
+            
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: comment
+            });
+      
+      - name: ❌ Fail on critical vulnerabilities
+        if: matrix.primary
+        run: |
+          if [ -f audit-results.json ]; then
+            CRITICAL_VULNS=$(cat audit-results.json | jq -r '.metadata.vulnerabilities.critical // 0')
+            if [ "$CRITICAL_VULNS" -gt 0 ]; then
+              echo "❌ Critical vulnerabilities found: $CRITICAL_VULNS"
+              echo "Please address these critical security issues before proceeding."
+              exit 1
+            fi
+          fi
+      
+      - name: ✅ Audit completed
+        if: matrix.primary
+        run: |
+          echo "✅ Dependency audit completed successfully"
+          echo "📊 Vulnerabilities: ${{ steps.npm-audit.outputs.vulnerability-count }}"
+          echo "🚨 Security issues: ${{ steps.security-assessment.outputs.security-issues }}"
+          
+          if [ "${{ steps.npm-audit.outputs.vulnerability-count }}" -eq 0 ]; then
+            echo "🎉 No vulnerabilities found!"
+          else
+            echo "⚠️  Please review the audit report and consider updating vulnerable packages."
+          fi
+
+  # Notify on workflow completion
+  notify:
+    name: 📧 Notify Results
+    runs-on: ubuntu-latest
+    needs: dependency-audit
+    if: always() && github.event_name == 'schedule'
+    
+    steps:
+      - name: 📧 Send notification
+        run: |
+          echo "Dependency audit workflow completed"
+          echo "Status: ${{ needs.dependency-audit.result }}"
+          # Add notification logic here (Slack, email, etc.)

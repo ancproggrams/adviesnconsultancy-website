@@ -1,0 +1,150 @@
+
+# Comprehensive Security Scanning Workflow
+name: 🔒 Security Scanning
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+  schedule:
+    - cron: '0 2 * * 3'  # Weekly on Wednesday at 02:00 UTC
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  security-events: write
+  actions: read
+
+jobs:
+  secret-scanning:
+    name: 🔍 Secret Detection
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: 📥 Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      
+      - name: 🔍 Run TruffleHog
+        uses: trufflesecurity/trufflehog@main
+        with:
+          path: ./
+          base: main
+          head: HEAD
+          extra_args: --debug --only-verified
+      
+      - name: 📊 Generate secret scan report
+        run: |
+          echo "Secret scanning completed"
+          # Additional secret scanning logic can be added here
+
+  dependency-check:
+    name: 🔍 OWASP Dependency Check
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: 📥 Checkout code
+        uses: actions/checkout@v4
+      
+      - name: 🏷️ Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+      
+      - name: 📦 Install dependencies
+        run: npm ci
+      
+      - name: 🔍 Run OWASP Dependency Check
+        uses: dependency-check/Dependency-Check_Action@main
+        with:
+          project: 'adviesnconsultancy-website'
+          path: '.'
+          format: 'ALL'
+          args: >
+            --enableRetired
+            --enableExperimental
+            --nodeAuditSkipDevDependencies
+      
+      - name: 📤 Upload dependency check results
+        uses: actions/upload-artifact@v4
+        with:
+          name: dependency-check-report
+          path: reports/
+          retention-days: 30
+
+  security-audit:
+    name: 🛡️ Security Audit
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: 📥 Checkout code
+        uses: actions/checkout@v4
+      
+      - name: 🏷️ Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+      
+      - name: 📦 Install dependencies
+        run: npm ci
+      
+      - name: 🔒 Run security audit
+        run: |
+          echo "Running comprehensive security audit..."
+          
+          # Run npm audit
+          npm audit --audit-level=moderate --json > security-audit.json || true
+          
+          # Check for security advisories
+          npm audit --audit-level=moderate > security-report.txt || true
+          
+          # Generate security summary
+          cat > security-summary.md << 'EOF'
+          # Security Audit Summary
+          
+          **Date:** $(date -u +"%Y-%m-%d %H:%M:%S UTC")
+          **Repository:** ${{ github.repository }}
+          **Branch:** ${{ github.ref_name }}
+          **Commit:** ${{ github.sha }}
+          
+          ## Audit Results
+          EOF
+          
+          if [ -f security-report.txt ]; then
+            echo "### NPM Security Audit" >> security-summary.md
+            echo "\`\`\`" >> security-summary.md
+            cat security-report.txt >> security-summary.md
+            echo "\`\`\`" >> security-summary.md
+          fi
+      
+      - name: 📤 Upload security audit results
+        uses: actions/upload-artifact@v4
+        with:
+          name: security-audit-results
+          path: |
+            security-audit.json
+            security-report.txt
+            security-summary.md
+          retention-days: 30
+      
+      - name: 💬 Comment security results on PR
+        if: github.event_name == 'pull_request'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            
+            if (fs.existsSync('security-summary.md')) {
+              const summary = fs.readFileSync('security-summary.md', 'utf8');
+              
+              github.rest.issues.createComment({
+                issue_number: context.issue.number,
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                body: '## 🔒 Security Scan Results\n\n' + summary
+              });
+            }
