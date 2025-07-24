@@ -18,7 +18,7 @@
       "runtime": "nodejs18.x"
     }
   },
-  "regions": ["ams1"],
+  "regions": ["arn1"],
   "github": {
     "silent": true
   }
