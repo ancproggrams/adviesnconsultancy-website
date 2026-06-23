@@ -93,6 +93,8 @@ export default function RootLayout({
 }: {
   children: React.ReactNode
 }) {
+  const enableVercelTelemetry = process.env.VERCEL === '1'
+
   return (
     <html lang="nl" suppressHydrationWarning={true}>
       <head>
@@ -126,7 +128,7 @@ export default function RootLayout({
             <SiteFooter />
           </div>
           <ChatbotManager />
-          {process.env.NODE_ENV === 'production' && (
+          {enableVercelTelemetry && (
             <>
               <Analytics />
               <SpeedInsights />

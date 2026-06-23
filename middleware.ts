@@ -9,11 +9,12 @@ const NON_WWW_DOMAIN = 'adviesnconsultancy.nl'
 export async function middleware(request: NextRequest) {
   const { pathname, search, protocol, hostname } = request.nextUrl
   const url = request.nextUrl.clone()
+  const isProductionDomain = hostname === PRODUCTION_DOMAIN || hostname === NON_WWW_DOMAIN || hostname.includes('adviesnconsultancy')
 
   // ==== DOMAIN REDIRECTS ====
   
   // Force HTTPS in production
-  if (process.env.NODE_ENV === 'production' && protocol !== 'https:') {
+  if (process.env.NODE_ENV === 'production' && isProductionDomain && protocol !== 'https:') {
     url.protocol = 'https:'
     return NextResponse.redirect(url)
   }

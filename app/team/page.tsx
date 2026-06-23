@@ -13,16 +13,89 @@ import {
 import Image from 'next/image'
 import { prisma } from '@/lib/db'
 
-export default async function TeamPage() {
-  // Fetch team members from database
-  const teamMembers = await prisma.teamMember.findMany({
-    where: {
-      isActive: true
-    },
-    orderBy: {
-      order: 'asc'
-    }
+export const dynamic = 'force-dynamic'
+
+const TEAM_MEMBER_QUERY_TIMEOUT_MS = 1200
+
+type TeamMember = {
+  id: string
+  name: string
+  position: string
+  bio: string
+  imageUrl: string | null
+  email: string | null
+  phone: string | null
+  linkedinUrl: string | null
+  expertise: string[]
+  isActive: boolean
+  order: number
+}
+
+const fallbackTeamMembers: TeamMember[] = [
+  {
+    id: 'marc-rene',
+    name: 'Marc René',
+    position: 'Senior BCM Consultant & Eigenaar',
+    bio: 'Marc heeft meer dan 15 jaar ervaring in business continuity management en compliance. Hij helpt organisaties met praktische BCM-systemen, risicobeheersing en continuïteitsvraagstukken.',
+    imageUrl: null,
+    email: 'marc@adviesnconsultancy.nl',
+    phone: '+31 6 22675520',
+    linkedinUrl: 'https://linkedin.com/in/marcrene',
+    expertise: ['ISO 22301', 'BCM Implementation', 'Crisis Management', 'Risk Assessment', 'Compliance Auditing'],
+    isActive: true,
+    order: 1,
+  },
+  {
+    id: 'bcm-consultant',
+    name: 'BCM Consultant',
+    position: 'Business Continuity Specialist',
+    bio: 'Onze consultants ondersteunen organisaties bij continuïteitsplanning, crisisvoorbereiding, herstelplannen en het vertalen van compliance-eisen naar uitvoerbare maatregelen.',
+    imageUrl: null,
+    email: 'info@adviesnconsultancy.nl',
+    phone: null,
+    linkedinUrl: null,
+    expertise: ['Business Continuity', 'Compliance', 'Risk Management', 'Recovery Planning'],
+    isActive: true,
+    order: 2,
+  },
+]
+
+function withTimeout<T>(promise: Promise<T>, timeoutMs: number): Promise<T> {
+  let timeout: ReturnType<typeof setTimeout> | undefined
+
+  return Promise.race([
+    promise,
+    new Promise<never>((_, reject) => {
+      timeout = setTimeout(() => reject(new Error('Team member query timed out')), timeoutMs)
+    }),
+  ]).finally(() => {
+    if (timeout) clearTimeout(timeout)
   })
+}
+
+async function getTeamMembers(): Promise<TeamMember[]> {
+  try {
+    const teamMembers = await withTimeout(
+      prisma.teamMember.findMany({
+        where: {
+          isActive: true
+        },
+        orderBy: {
+          order: 'asc'
+        }
+      }),
+      TEAM_MEMBER_QUERY_TIMEOUT_MS
+    )
+
+    return teamMembers.length > 0 ? teamMembers : fallbackTeamMembers
+  } catch (error) {
+    console.warn('Using fallback team members because the database is unavailable during render.')
+    return fallbackTeamMembers
+  }
+}
+
+export default async function TeamPage() {
+  const teamMembers = await getTeamMembers()
 
   const companyStats = [
     { label: "Jaar ervaring", value: "15+", icon: Award },
@@ -60,7 +133,7 @@ export default async function TeamPage() {
 
       {/* Team Members */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-16">
-        {teamMembers.map((member: any) => (
+        {teamMembers.map((member) => (
           <Card key={member.id} className="hover:shadow-lg transition-shadow">
             <CardContent className="p-6">
               <div className="flex items-start gap-6">
@@ -125,7 +198,7 @@ export default async function TeamPage() {
                 <div className="mt-6">
                   <h4 className="font-medium mb-3">Expertise</h4>
                   <div className="flex flex-wrap gap-2">
-                    {member.expertise.map((skill: any, skillIndex: number) => (
+                    {member.expertise.map((skill, skillIndex) => (
                       <Badge key={skillIndex} variant="secondary" className="text-xs">
                         {skill}
                       </Badge>
